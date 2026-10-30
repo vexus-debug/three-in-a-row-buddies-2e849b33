@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Plus, Search, ChevronRight, ChevronLeft, AlertTriangle, Zap, Pencil, Ban, User, PauseCircle, PlayCircle } from "lucide-react";
+import { Plus, Search, ChevronRight, ChevronLeft, AlertTriangle, Zap, Pencil, Ban, User, PauseCircle, PlayCircle, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LAB_STAGES, WORK_TYPES, normalizeStage, stageLabel } from "@/config/dentalLab";
+import { LAB_STAGES, REMAKE_SPAWNED, WORK_TYPES, normalizeStage, stageLabel } from "@/config/dentalLab";
 import { useLabCases, useUpdateLabCase, type LabCaseRow } from "@/hooks/useLabCases";
 import { useStaff } from "@/hooks/useStaff";
 import { useMoveCase, useHoldCase, useCreateDentalLabCase, clientOf, patientOf, isRush, isOverdue, isCancelled } from "@/hooks/useDentalLab";
 import { CaseFiles } from "@/components/dlab/CaseFiles";
 import { TeethPicker } from "@/components/dlab/TeethPicker";
 import { HoldDialog } from "@/components/dlab/HoldDialog";
+import { RemakeDialog } from "@/components/dlab/RemakeDialog";
 import { blockedReason, nextStage, prevStage, splitLegacyTeeth } from "@/lib/labWorkflow";
 import { toast } from "@/hooks/use-toast";
 import { useLabClientNames, canonicalClient, useClientPriceLookup } from "./dlabLinks";
@@ -48,6 +49,8 @@ export default function DlabCasesPage() {
 
   const hold = useHoldCase();
   const [holdFor, setHoldFor] = useState<LabCaseRow | null>(null);
+  const [remakeFor, setRemakeFor] = useState<LabCaseRow | null>(null);
+  const isRemade = (c: LabCaseRow) => c.status === REMAKE_SPAWNED;
   const [selected, setSelected] = useState<string[]>([]);
   const isHeld = (c: LabCaseRow) => c.status === "on_hold";
 
@@ -80,7 +83,7 @@ export default function DlabCasesPage() {
     setSelected([]);
   };
   const toggleSel = (id: string) => setSelected((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const lanes = [{ key: "on_hold", label: "On Hold", hint: "Waiting on the clinic" }, ...LAB_STAGES];
+  const lanes = [{ key: "on_hold", label: "On Hold", hint: "Waiting on the clinic" }, ...LAB_STAGES, { key: REMAKE_SPAWNED, label: "Remake spawned", hint: "Original replaced by a remake" }];
 
   return (
     <div className="space-y-5">
@@ -111,8 +114,9 @@ export default function DlabCasesPage() {
         <div className="flex gap-3 overflow-x-auto pb-3 snap-x">
           {lanes.map((stage) => {
             const held = stage.key === "on_hold";
-            const list = visible.filter((c) => (held ? isHeld(c) : !isHeld(c) && normalizeStage(c.status) === stage.key));
-            if (held && !list.length) return null;
+            const remade = stage.key === REMAKE_SPAWNED;
+            const list = visible.filter((c) => (held ? isHeld(c) : remade ? isRemade(c) : !isHeld(c) && !isRemade(c) && normalizeStage(c.status) === stage.key));
+            if ((held || remade) && !list.length) return null;
             return (
               <div key={stage.key} className={`w-[260px] shrink-0 snap-start rounded-xl p-2 ${held ? "border border-warning/40 bg-warning/10" : "bg-muted/40"}`}>
                 <div className="mb-2 flex items-center justify-between px-1">
@@ -172,6 +176,7 @@ export default function DlabCasesPage() {
                   {isHeld(open)
                     ? <Button size="sm" variant="outline" disabled={hold.isPending} onClick={() => hold.mutate({ id: open.id, reason: null })}><PlayCircle className="mr-1 h-3.5 w-3.5" />Release hold</Button>
                     : <Button size="sm" variant="outline" onClick={() => setHoldFor(open)}><PauseCircle className="mr-1 h-3.5 w-3.5" />Put on hold</Button>}
+                  <Button size="sm" variant="outline" onClick={() => setRemakeFor(open)}><RotateCcw className="mr-1 h-3.5 w-3.5" />Initiate remake</Button>
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => {
                     if (window.confirm(`Cancel case ${open.case_number}? It will be removed from the board and from billing.`)) { move.mutate({ id: open.id, status: "cancelled" }); setOpenId(null); }
                   }}><Ban className="mr-1 h-3.5 w-3.5" />Cancel case</Button>
@@ -218,6 +223,7 @@ export default function DlabCasesPage() {
           doctor={holdFor.clinic_doctor_name || undefined} pending={hold.isPending}
           onConfirm={(reason) => hold.mutate({ id: holdFor.id, reason }, { onSuccess: () => setHoldFor(null) })} />
       )}
+      {remakeFor && <RemakeDialog c={remakeFor} onClose={() => setRemakeFor(null)} onCreated={(id) => setOpenId(id)} />}
       <NewCaseDialog open={creating} onOpenChange={setCreating} />
     </div>
   );
