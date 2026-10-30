@@ -13,6 +13,16 @@ export interface UpdateEntry {
 
 export const updates: UpdateEntry[] = [
   {
+    version: "v2.24.2",
+    date: "October 30, 2026",
+    title: "Quality Control and Remakes pages now open correctly",
+    kind: "fix",
+    items: [
+      { kind: "fix", text: "The Quality Control menu item now opens the 6-point inspection station instead of the old list." },
+      { kind: "fix", text: "The Remakes & Warranties menu item now opens the remake page with responsibility tracking." },
+    ],
+  },
+  {
     version: "v2.24.1",
     date: "October 30, 2026",
     title: "Quality Control: scans in the inspection window",
