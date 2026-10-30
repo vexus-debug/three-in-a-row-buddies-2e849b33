@@ -13,6 +13,16 @@ export interface UpdateEntry {
 
 export const updates: UpdateEntry[] = [
   {
+    version: "v2.25.0",
+    date: "October 30, 2026",
+    title: "Start remakes straight from the Case Board",
+    kind: "feature",
+    items: [
+      { kind: "feature", text: "Open any case on the Case Board and tap Initiate Remake to create its rush -R1 / -R2 copy." },
+      { kind: "improvement", text: "The original case is now marked 'Remake spawned' and shown in its own column, with the change recorded in the case history." },
+    ],
+  },
+  {
     version: "v2.24.2",
     date: "October 30, 2026",
     title: "Quality Control and Remakes pages now open correctly",
