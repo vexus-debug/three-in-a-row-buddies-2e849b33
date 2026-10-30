@@ -19,7 +19,7 @@ export const updates: UpdateEntry[] = [
     kind: "feature",
     items: [
       { kind: "feature", text: "Open any case on the Case Board and tap Initiate Remake to create its rush -R1 / -R2 copy." },
-      { kind: "improvement", text: "The original case is now marked 'Remake spawned' and shown in its own column, with the change kept in the case history." },
+      { kind: "improvement", text: "The original case is now marked 'Remake spawned' and shown in its own column, with the change recorded in the case history." },
     ],
   },
   {

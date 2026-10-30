@@ -51,7 +51,6 @@ export function RemakeDialog({ c, onClose, onCreated }: { c: LabCaseRow; onClose
       if (error) throw error;
       const { error: e1 } = await sb.from("lab_cases").update({ remake_count: Number(src.remake_count || 0) + 1, status: REMAKE_SPAWNED }).eq("id", c.id);
       if (e1) throw e1;
-      await sb.from("lab_case_history").insert({ lab_case_id: c.id, field_changed: "status", old_value: c.status, new_value: REMAKE_SPAWNED });
       const { error: e2 } = await sb.from("lab_records").insert({
         org_id: currentOrg?.org_id, kind: "warranties", case_id: c.id, title: c.case_number, status: "in remake",
         amount: fee, record_date: new Date().toISOString().slice(0, 10),
