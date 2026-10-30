@@ -11,6 +11,7 @@ import { useOrg } from "@/hooks/useOrg";
 import { useLabCases, type LabCaseRow } from "@/hooks/useLabCases";
 import { clientOf, patientOf } from "@/hooks/useDentalLab";
 import { REMAKE_FAULTS, REMAKE_REASONS, hasOpenRemake, nextRemakeNumber, remakeDueDate, remakeFee, type RemakeFault } from "@/lib/labRemake";
+import { REMAKE_SPAWNED } from "@/config/dentalLab";
 
 const money = (n: number) => `₦${Number(n || 0).toLocaleString()}`;
 
@@ -48,7 +49,9 @@ export function RemakeDialog({ c, onClose, onCreated }: { c: LabCaseRow; onClose
         notes: `Remake of ${c.case_number} — ${REMAKE_FAULTS.find((f) => f.key === fault)?.label}: ${reason}${notes ? `. ${notes}` : ""}`,
       }).select("id").single();
       if (error) throw error;
-      await sb.from("lab_cases").update({ remake_count: Number(src.remake_count || 0) + 1 }).eq("id", c.id);
+      const { error: e1 } = await sb.from("lab_cases").update({ remake_count: Number(src.remake_count || 0) + 1, status: REMAKE_SPAWNED }).eq("id", c.id);
+      if (e1) throw e1;
+      await sb.from("lab_case_history").insert({ lab_case_id: c.id, field_changed: "status", old_value: c.status, new_value: REMAKE_SPAWNED });
       const { error: e2 } = await sb.from("lab_records").insert({
         org_id: currentOrg?.org_id, kind: "warranties", case_id: c.id, title: c.case_number, status: "in remake",
         amount: fee, record_date: new Date().toISOString().slice(0, 10),

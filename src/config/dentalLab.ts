@@ -12,14 +12,19 @@ export const LAB_STAGES = [
 
 export type LabStage = (typeof LAB_STAGES)[number]["key"];
 
-/** Older records used "in-progress"; treat them as design. */
+/** Parent case status once a remake has been spawned from it. */
+export const REMAKE_SPAWNED = "remake_spawned";
+
+/** Older records used "in-progress"; treat them as design. Remade originals count as delivered work. */
 export function normalizeStage(status: string | null | undefined): LabStage {
   if (!status) return "pending";
   if (status === "in-progress") return "design";
+  if (status === REMAKE_SPAWNED) return "delivered";
   return (LAB_STAGES.find((s) => s.key === status)?.key ?? "pending") as LabStage;
 }
 
 export function stageLabel(status: string | null | undefined) {
+  if (status === REMAKE_SPAWNED) return "Remake spawned";
   return LAB_STAGES.find((s) => s.key === normalizeStage(status))?.label ?? "Received";
 }
 
